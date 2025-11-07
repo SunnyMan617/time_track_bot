@@ -29,8 +29,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing initData' }, { status: 400 });
     }
 
+    const botToken = process.env.BOT_TOKEN;
+    if (!botToken) {
+      console.error('BOT_TOKEN environment variable is not set');
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+    }
+
     // Validate init data
-    const isValid = validateTelegramWebAppData(initData, process.env.BOT_TOKEN!);
+    const isValid = validateTelegramWebAppData(initData, botToken);
 
     if (!isValid) {
       return NextResponse.json({ error: 'Invalid initData' }, { status: 401 });
