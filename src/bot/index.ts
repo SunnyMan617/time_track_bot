@@ -81,58 +81,58 @@ Need more help? Contact @your_support
 });
 
 // Command: /stats
-bot.command('stats', async (ctx) => {
-  try {
-    const telegramUser = ctx.from;
-    const user = await prisma.user.findUnique({
-      where: { telegramId: BigInt(telegramUser.id) },
-      include: {
-        timeEntries: {
-          where: {
-            startTime: {
-              gte: new Date(new Date().setHours(0, 0, 0, 0)),
-            },
-          },
-        },
-        tasks: true,
-      },
-    });
+// bot.command('stats', async (ctx) => {
+//   try {
+//     const telegramUser = ctx.from;
+//     const user = await prisma.user.findUnique({
+//       where: { telegramId: BigInt(telegramUser.id) },
+//       include: {
+//         timeEntries: {
+//           where: {
+//             startTime: {
+//               gte: new Date(new Date().setHours(0, 0, 0, 0)),
+//             },
+//           },
+//         },
+//         tasks: true,
+//       },
+//     });
 
-    if (!user) {
-      await ctx.reply('User not found. Please use /start first.');
-      return;
-    }
+//     if (!user) {
+//       await ctx.reply('User not found. Please use /start first.');
+//       return;
+//     }
 
-    const todayTime = user.timeEntries.reduce((acc, entry) => {
-      return acc + (entry.duration || 0);
-    }, 0);
+//     const todayTime = user.timeEntries.reduce((acc, entry) => {
+//       return acc + (entry.duration || 0);
+//     }, 0);
 
-    const hours = Math.floor(todayTime / 3600);
-    const minutes = Math.floor((todayTime % 3600) / 60);
+//     const hours = Math.floor(todayTime / 3600);
+//     const minutes = Math.floor((todayTime % 3600) / 60);
 
-    const activeTasks = user.tasks.filter((t) => t.status === 'IN_PROGRESS').length;
-    const completedTasks = user.tasks.filter((t) => t.status === 'DONE').length;
+//     const activeTasks = user.tasks.filter((t) => t.status === 'IN_PROGRESS').length;
+//     const completedTasks = user.tasks.filter((t) => t.status === 'DONE').length;
 
-    const statsText = `
-📊 *Your Statistics*
+//     const statsText = `
+// 📊 *Your Statistics*
 
-⏱️ Today: ${hours}h ${minutes}m
-✅ Completed Tasks: ${completedTasks}
-🔄 Active Tasks: ${activeTasks}
-📝 Total Tasks: ${user.tasks.length}
+// ⏱️ Today: ${hours}h ${minutes}m
+// ✅ Completed Tasks: ${completedTasks}
+// 🔄 Active Tasks: ${activeTasks}
+// 📝 Total Tasks: ${user.tasks.length}
 
-Open the app for detailed statistics!
-`;
+// Open the app for detailed statistics!
+// `;
 
-    await ctx.reply(statsText, {
-      parse_mode: 'Markdown',
-      ...Markup.inlineKeyboard([[Markup.button.webApp('📊 Open App', WEBAPP_URL)]]),
-    });
-  } catch (error) {
-    console.error('Error in /stats command:', error);
-    await ctx.reply('An error occurred while fetching statistics.');
-  }
-});
+//     await ctx.reply(statsText, {
+//       parse_mode: 'Markdown',
+//       ...Markup.inlineKeyboard([[Markup.button.webApp('📊 Open App', WEBAPP_URL)]]),
+//     });
+//   } catch (error) {
+//     console.error('Error in /stats command:', error);
+//     await ctx.reply('An error occurred while fetching statistics.');
+//   }
+// });
 
 // Command: /active
 bot.command('active', async (ctx) => {
