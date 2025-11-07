@@ -115,7 +115,7 @@ npm run bot          # Start bot without watch mode
 | **Platform** | Local | Vercel |
 | **Bot Mode** | Polling | Webhook |
 | **Start Command** | `npm run bot:dev` | Automatic (no command) |
-| **Web App URL** | http://localhost:3000 | https://your-app.vercel.app |
+| **Web App URL** | http://localhost:3000 | https://time-track-bot.vercel.app |
 
 ---
 
@@ -131,7 +131,7 @@ npm run bot          # Start bot without watch mode
 | Variable | Description | Example |
 |----------|-------------|---------|
 | `BOT_TOKEN` | Telegram bot token from @BotFather | `123456:ABCdef...` |
-| `WEBAPP_URL` | Your web app URL | `https://your-app.vercel.app` |
+| `WEBAPP_URL` | Your web app URL | `` |
 | `DATABASE_URL` | Database connection (optional) | PostgreSQL connection string |
 
 ---
