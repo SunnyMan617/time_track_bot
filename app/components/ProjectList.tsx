@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { Plus, Folder, Clock } from 'lucide-react';
-import { hapticFeedback } from '@/src/lib/telegram';
 
 interface Project {
   id: string;
@@ -12,21 +11,17 @@ interface Project {
   timeEntries: any[];
 }
 
-interface ProjectListProps {
-  userId: string;
-}
-
-export default function ProjectList({ userId }: ProjectListProps) {
+export default function ProjectList() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchProjects();
-  }, [userId]);
+  }, []);
 
   const fetchProjects = async () => {
     try {
-      const res = await fetch(`/api/projects?userId=${userId}`);
+      const res = await fetch(`/api/projects`);
       const { data } = await res.json();
       setProjects(data);
     } catch (error) {
@@ -62,7 +57,6 @@ export default function ProjectList({ userId }: ProjectListProps) {
         <h2 className="text-xl font-semibold">Projects</h2>
         <button
           onClick={() => {
-            hapticFeedback('impact', 'light');
             // Navigate to create project page
           }}
           className="bg-blue-500 text-white p-2 rounded-lg hover:bg-blue-600 active:bg-blue-700"
@@ -80,7 +74,6 @@ export default function ProjectList({ userId }: ProjectListProps) {
               key={project.id}
               className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
               onClick={() => {
-                hapticFeedback('impact', 'light');
                 // Navigate to project details
               }}
             >

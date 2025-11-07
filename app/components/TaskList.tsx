@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { Plus, CheckCircle, Circle, Clock, AlertCircle } from 'lucide-react';
-import { hapticFeedback } from '@/src/lib/telegram';
 
 interface Task {
   id: string;
@@ -12,22 +11,19 @@ interface Task {
   project?: { name: string; color: string };
 }
 
-interface TaskListProps {
-  userId: string;
-}
-
-export default function TaskList({ userId }: TaskListProps) {
+export default function TaskList() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'TODO' | 'IN_PROGRESS' | 'DONE'>('all');
 
   useEffect(() => {
     fetchTasks();
-  }, [userId, filter]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filter]);
 
   const fetchTasks = async () => {
     try {
-      const url = filter === 'all' ? `/api/tasks?userId=${userId}` : `/api/tasks?userId=${userId}&status=${filter}`;
+      const url = filter === 'all' ? `/api/tasks` : `/api/tasks?status=${filter}`;
       const res = await fetch(url);
       const { data } = await res.json();
       setTasks(data);
@@ -39,8 +35,6 @@ export default function TaskList({ userId }: TaskListProps) {
   };
 
   const toggleTaskStatus = async (taskId: string, currentStatus: string) => {
-    hapticFeedback('impact', 'light');
-
     const newStatus = currentStatus === 'DONE' ? 'TODO' : 'DONE';
 
     try {
@@ -48,17 +42,14 @@ export default function TaskList({ userId }: TaskListProps) {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId,
           taskId,
           status: newStatus,
         }),
       });
 
-      hapticFeedback('notification', 'success');
       fetchTasks();
     } catch (error) {
       console.error('Failed to update task:', error);
-      hapticFeedback('notification', 'error');
     }
   };
 
@@ -105,7 +96,6 @@ export default function TaskList({ userId }: TaskListProps) {
         <h2 className="text-xl font-semibold">Tasks</h2>
         <button
           onClick={() => {
-            hapticFeedback('impact', 'light');
             // Navigate to create task page
           }}
           className="bg-blue-500 text-white p-2 rounded-lg hover:bg-blue-600 active:bg-blue-700"
@@ -118,10 +108,7 @@ export default function TaskList({ userId }: TaskListProps) {
         {['all', 'TODO', 'IN_PROGRESS', 'DONE'].map((f) => (
           <button
             key={f}
-            onClick={() => {
-              hapticFeedback('selection');
-              setFilter(f as any);
-            }}
+            onClick={() => setFilter(f as 'all' | 'TODO' | 'IN_PROGRESS' | 'DONE')}
             className={`
               px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all
               ${

@@ -5,8 +5,10 @@ import { TaskService } from '@/src/lib/services/taskService';
 import { TaskStatus, Priority } from '@/src/types';
 import { z } from 'zod';
 
+// Default user ID for single-user mode (no authentication)
+const DEFAULT_USER_ID = 'demo-user';
+
 const CreateTaskSchema = z.object({
-  userId: z.string(),
   title: z.string().min(1),
   description: z.string().optional(),
   status: z.nativeEnum(TaskStatus).optional(),
@@ -16,7 +18,6 @@ const CreateTaskSchema = z.object({
 });
 
 const UpdateTaskSchema = z.object({
-  userId: z.string(),
   taskId: z.string(),
   title: z.string().optional(),
   description: z.string().optional(),
@@ -30,15 +31,10 @@ const UpdateTaskSchema = z.object({
 export async function GET(req: NextRequest) {
   try {
     const searchParams = req.nextUrl.searchParams;
-    const userId = searchParams.get('userId');
     const taskId = searchParams.get('taskId');
 
-    if (!userId) {
-      return NextResponse.json({ error: 'Missing userId' }, { status: 400 });
-    }
-
     if (taskId) {
-      const task = await TaskService.getTask(userId, taskId);
+      const task = await TaskService.getTask(DEFAULT_USER_ID, taskId);
       return NextResponse.json({ data: task });
     }
 
@@ -46,7 +42,7 @@ export async function GET(req: NextRequest) {
     const priority = searchParams.get('priority') as Priority | null;
     const projectId = searchParams.get('projectId');
 
-    const tasks = await TaskService.getTasks(userId, {
+    const tasks = await TaskService.getTasks(DEFAULT_USER_ID, {
       status: status || undefined,
       priority: priority || undefined,
       projectId: projectId || undefined,
@@ -68,7 +64,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const validated = CreateTaskSchema.parse(body);
 
-    const task = await TaskService.createTask(validated.userId, {
+    const task = await TaskService.createTask(DEFAULT_USER_ID, {
       title: validated.title,
       description: validated.description,
       status: validated.status,
@@ -93,7 +89,7 @@ export async function PUT(req: NextRequest) {
     const body = await req.json();
     const validated = UpdateTaskSchema.parse(body);
 
-    const task = await TaskService.updateTask(validated.userId, validated.taskId, {
+    const task = await TaskService.updateTask(DEFAULT_USER_ID, validated.taskId, {
       title: validated.title,
       description: validated.description,
       status: validated.status,
@@ -119,14 +115,13 @@ export async function PUT(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   try {
     const searchParams = req.nextUrl.searchParams;
-    const userId = searchParams.get('userId');
     const taskId = searchParams.get('taskId');
 
-    if (!userId || !taskId) {
-      return NextResponse.json({ error: 'Missing userId or taskId' }, { status: 400 });
+    if (!taskId) {
+      return NextResponse.json({ error: 'Missing taskId' }, { status: 400 });
     }
 
-    const task = await TaskService.deleteTask(userId, taskId);
+    const task = await TaskService.deleteTask(DEFAULT_USER_ID, taskId);
     return NextResponse.json({ data: task });
   } catch (error) {
     if (error instanceof Error) {

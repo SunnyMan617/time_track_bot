@@ -4,15 +4,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ProjectService } from '@/src/lib/services/projectService';
 import { z } from 'zod';
 
+// Default user ID for single-user mode (no authentication)
+const DEFAULT_USER_ID = 'demo-user';
+
 const CreateProjectSchema = z.object({
-  userId: z.string(),
   name: z.string().min(1),
   description: z.string().optional(),
   color: z.string().optional(),
 });
 
 const UpdateProjectSchema = z.object({
-  userId: z.string(),
   projectId: z.string(),
   name: z.string().optional(),
   description: z.string().optional(),
@@ -24,25 +25,20 @@ const UpdateProjectSchema = z.object({
 export async function GET(req: NextRequest) {
   try {
     const searchParams = req.nextUrl.searchParams;
-    const userId = searchParams.get('userId');
     const projectId = searchParams.get('projectId');
     const includeArchived = searchParams.get('includeArchived') === 'true';
-
-    if (!userId) {
-      return NextResponse.json({ error: 'Missing userId' }, { status: 400 });
-    }
 
     if (projectId) {
       const action = searchParams.get('action');
       if (action === 'stats') {
-        const stats = await ProjectService.getProjectStats(userId, projectId);
+        const stats = await ProjectService.getProjectStats(DEFAULT_USER_ID, projectId);
         return NextResponse.json({ data: stats });
       }
-      const project = await ProjectService.getProject(userId, projectId);
+      const project = await ProjectService.getProject(DEFAULT_USER_ID, projectId);
       return NextResponse.json({ data: project });
     }
 
-    const projects = await ProjectService.getProjects(userId, includeArchived);
+    const projects = await ProjectService.getProjects(DEFAULT_USER_ID, includeArchived);
     return NextResponse.json({ data: projects });
   } catch (error) {
     if (error instanceof Error) {
@@ -59,7 +55,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const validated = CreateProjectSchema.parse(body);
 
-    const project = await ProjectService.createProject(validated.userId, {
+    const project = await ProjectService.createProject(DEFAULT_USER_ID, {
       name: validated.name,
       description: validated.description,
       color: validated.color,
@@ -81,7 +77,7 @@ export async function PUT(req: NextRequest) {
     const body = await req.json();
     const validated = UpdateProjectSchema.parse(body);
 
-    const project = await ProjectService.updateProject(validated.userId, validated.projectId, {
+    const project = await ProjectService.updateProject(DEFAULT_USER_ID, validated.projectId, {
       name: validated.name,
       description: validated.description,
       color: validated.color,
@@ -105,14 +101,13 @@ export async function PUT(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   try {
     const searchParams = req.nextUrl.searchParams;
-    const userId = searchParams.get('userId');
     const projectId = searchParams.get('projectId');
 
-    if (!userId || !projectId) {
-      return NextResponse.json({ error: 'Missing userId or projectId' }, { status: 400 });
+    if (!projectId) {
+      return NextResponse.json({ error: 'Missing projectId' }, { status: 400 });
     }
 
-    const project = await ProjectService.deleteProject(userId, projectId);
+    const project = await ProjectService.deleteProject(DEFAULT_USER_ID, projectId);
     return NextResponse.json({ data: project });
   } catch (error) {
     if (error instanceof Error) {

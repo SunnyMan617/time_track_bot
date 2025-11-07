@@ -2,15 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { Play, Square, Clock } from 'lucide-react';
-import { hapticFeedback } from '@/src/lib/telegram';
 
 interface TimerProps {
-  userId: string;
   onStart?: () => void;
   onStop?: () => void;
 }
 
-export default function Timer({ userId, onStart, onStop }: TimerProps) {
+export default function Timer({ onStart, onStop }: TimerProps) {
   const [isRunning, setIsRunning] = useState(false);
   const [activeEntry, setActiveEntry] = useState<any>(null);
   const [elapsed, setElapsed] = useState(0);
@@ -18,7 +16,7 @@ export default function Timer({ userId, onStart, onStop }: TimerProps) {
 
   useEffect(() => {
     fetchActiveTimer();
-  }, [userId]);
+  }, []);
 
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
@@ -27,7 +25,7 @@ export default function Timer({ userId, onStart, onStop }: TimerProps) {
       interval = setInterval(() => {
         const startTime = new Date(activeEntry.startTime).getTime();
         const now = Date.now();
-        setElapsed(Math.floor((now - startTime) / 1000));
+        setElapsed(Math.floor((now - startTime) / 1000)); 
       }, 1000);
     }
 
@@ -38,7 +36,7 @@ export default function Timer({ userId, onStart, onStop }: TimerProps) {
 
   const fetchActiveTimer = async () => {
     try {
-      const res = await fetch(`/api/time?userId=${userId}&action=active`);
+      const res = await fetch(`/api/time?action=active`);
       const { data } = await res.json();
 
       if (data) {
@@ -55,7 +53,6 @@ export default function Timer({ userId, onStart, onStop }: TimerProps) {
 
   const startTimer = async () => {
     setLoading(true);
-    hapticFeedback('impact', 'light');
 
     try {
       const res = await fetch('/api/time', {
@@ -63,7 +60,6 @@ export default function Timer({ userId, onStart, onStop }: TimerProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'start',
-          userId,
         }),
       });
 
@@ -77,11 +73,9 @@ export default function Timer({ userId, onStart, onStop }: TimerProps) {
       setActiveEntry(data);
       setIsRunning(true);
       setElapsed(0);
-      hapticFeedback('notification', 'success');
       onStart?.();
     } catch (error) {
       console.error('Failed to start timer:', error);
-      hapticFeedback('notification', 'error');
     } finally {
       setLoading(false);
     }
@@ -91,7 +85,6 @@ export default function Timer({ userId, onStart, onStop }: TimerProps) {
     if (!activeEntry) return;
 
     setLoading(true);
-    hapticFeedback('impact', 'medium');
 
     try {
       const res = await fetch('/api/time', {
@@ -99,7 +92,6 @@ export default function Timer({ userId, onStart, onStop }: TimerProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'stop',
-          userId,
           entryId: activeEntry.id,
         }),
       });
@@ -114,11 +106,9 @@ export default function Timer({ userId, onStart, onStop }: TimerProps) {
       setActiveEntry(null);
       setIsRunning(false);
       setElapsed(0);
-      hapticFeedback('notification', 'success');
       onStop?.();
     } catch (error) {
       console.error('Failed to stop timer:', error);
-      hapticFeedback('notification', 'error');
     } finally {
       setLoading(false);
     }

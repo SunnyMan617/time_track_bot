@@ -3,11 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Clock, CheckCircle, Target, Folder } from 'lucide-react';
 
-interface StatsCardProps {
-  userId: string;
-}
-
-export default function StatsCard({ userId }: StatsCardProps) {
+export default function StatsCard() {
   const [stats, setStats] = useState({
     today: 0,
     thisWeek: 0,
@@ -20,11 +16,11 @@ export default function StatsCard({ userId }: StatsCardProps) {
 
   useEffect(() => {
     fetchStats();
-  }, [userId]);
+  }, []);
 
   const fetchStats = async () => {
     try {
-      const res = await fetch(`/api/time?userId=${userId}&action=stats`);
+      const res = await fetch(`/api/time?action=stats`);
       const { data } = await res.json();
       setStats(data);
     } catch (error) {
