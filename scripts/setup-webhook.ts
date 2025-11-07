@@ -17,7 +17,7 @@ if (!WEBAPP_URL) {
   process.exit(1);
 }
 
-const webhookUrl = `${WEBAPP_URL}`;
+const webhookUrl = `${WEBAPP_URL}/api/webhook`;
 
 async function setupWebhook() {
   try {
