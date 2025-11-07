@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "bot": "tsx src/bot/index.ts",
-    "bot:dev": "tsx watch src/bot/index.ts"
+    "bot:dev": "tsx watch src/bot/index.ts",
+    "webhook:setup": "tsx scripts/setup-webhook.ts",
+    "webhook:check": "tsx scripts/check-webhook.ts"
   },
   "dependencies": {
     "chart.js": "^4.4.6",

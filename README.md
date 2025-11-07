@@ -1,36 +1,192 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ⏱️ Time Tracker Telegram Bot
 
-## Getting Started
+A powerful time tracking bot for Telegram with a beautiful web interface. Track your time, manage tasks, and boost productivity - all within Telegram!
 
-First, run the development server:
+## ✨ Features
+
+- 🤖 **Telegram Mini App** - Beautiful web interface inside Telegram
+- ⏱️ **Time Tracking** - Track time for tasks and projects
+- 📊 **Statistics & Reports** - Visualize your productivity
+- 📝 **Task Management** - Create and organize tasks
+- 🎯 **Project Organization** - Group tasks by projects
+- 🚀 **Auto-Start on Vercel** - No manual commands needed after deployment
+
+## 🚀 Quick Start (Local Development)
+
+### 1. Install Dependencies
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Setup Environment Variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Create a `.env` file:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```env
+BOT_TOKEN=your_bot_token_from_botfather
+WEBAPP_URL=http://localhost:3000
+```
 
-## Learn More
+Get your bot token from [@BotFather](https://t.me/BotFather) on Telegram.
 
-To learn more about Next.js, take a look at the following resources:
+### 3. Run the Application
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+**Terminal 1: Start the web app**
+```bash
+npm run dev
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**Terminal 2: Start the bot (polling mode)**
+```bash
+npm run bot:dev
+```
 
-## Deploy on Vercel
+### 4. Test in Telegram
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. Find your bot in Telegram
+2. Send `/start`
+3. Click "🚀 Open Time Tracker"
+4. Start tracking time! 🎉
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## 🌐 Deploy to Vercel (Production)
+
+For production deployment with auto-start (no manual commands needed), see:
+
+📖 **[VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md)** - Complete deployment guide
+
+**Quick summary:**
+
+1. Deploy to Vercel
+2. Add environment variables (`BOT_TOKEN`, `WEBAPP_URL`)
+3. Run `npm run webhook:setup`
+4. Bot auto-starts automatically via webhooks! ✅
+
+---
+
+## 📁 Project Structure
+
+```
+├── app/
+│   ├── api/
+│   │   ├── webhook/        # Telegram webhook endpoint (Vercel)
+│   │   ├── tasks/          # Task management API
+│   │   ├── projects/       # Project management API
+│   │   └── time/           # Time tracking API
+│   ├── page.tsx            # Main web interface
+│   └── layout.tsx          # App layout
+├── src/
+│   ├── bot/
+│   │   ├── index.ts        # Bot entry point (local polling)
+│   │   └── handlers.ts     # Shared bot handlers
+│   └── lib/
+│       └── store.ts        # Data persistence
+├── scripts/
+│   └── setup-webhook.ts    # Webhook setup script
+└── components/             # React components
+```
+
+---
+
+## 🛠️ Available Commands
+
+```bash
+# Development
+npm run dev          # Start Next.js web app
+npm run bot:dev      # Start bot in polling mode (local)
+
+# Production
+npm run build        # Build for production
+npm run start        # Start production server
+npm run webhook:setup # Setup webhook for Vercel deployment
+
+# Bot (local only)
+npm run bot          # Start bot without watch mode
+```
+
+---
+
+## 🔄 Development vs Production
+
+| Mode | Development | Production |
+|------|------------|------------|
+| **Platform** | Local | Vercel |
+| **Bot Mode** | Polling | Webhook |
+| **Start Command** | `npm run bot:dev` | Automatic (no command) |
+| **Web App URL** | http://localhost:3000 | https://your-app.vercel.app |
+
+---
+
+## 📚 Documentation
+
+- [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md) - Detailed Vercel deployment guide with auto-start
+- [DEPLOYMENT.md](./DEPLOYMENT.md) - General deployment options
+
+---
+
+## 🔧 Environment Variables
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `BOT_TOKEN` | Telegram bot token from @BotFather | `123456:ABCdef...` |
+| `WEBAPP_URL` | Your web app URL | `https://your-app.vercel.app` |
+| `DATABASE_URL` | Database connection (optional) | PostgreSQL connection string |
+
+---
+
+## 🤖 Bot Commands
+
+- `/start` - Open the mini app
+- `/help` - Show help message
+- `/stats` - View statistics
+- `/active` - Show active timers
+- `/stop` - Stop time tracking
+
+---
+
+## 🐛 Troubleshooting
+
+### Bot doesn't respond after deployment
+
+1. Check webhook status: `npm run webhook:setup`
+2. Verify environment variables in Vercel
+3. Check Vercel logs for errors
+
+### Local bot not working
+
+1. Make sure `.env` file exists with `BOT_TOKEN`
+2. Delete webhook: `curl https://api.telegram.org/bot<TOKEN>/deleteWebhook`
+3. Restart bot: `npm run bot:dev`
+
+See [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md) for more troubleshooting tips.
+
+---
+
+## 🎨 Tech Stack
+
+- **Frontend**: Next.js 16, React 19, Tailwind CSS
+- **Backend**: Next.js API Routes
+- **Bot**: Telegraf (Telegram Bot Framework)
+- **Deployment**: Vercel (automatic with webhooks)
+- **Charts**: Chart.js
+
+---
+
+## 📄 License
+
+MIT License - feel free to use this project for your own time tracking needs!
+
+---
+
+## 🙏 Credits
+
+Built with ❤️ using:
+- [Next.js](https://nextjs.org/)
+- [Telegraf](https://telegraf.js.org/)
+- [Vercel](https://vercel.com/)
+
+---
+
+**Need help?** Check out [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md) for detailed deployment instructions!
