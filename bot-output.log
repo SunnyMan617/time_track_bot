@@ -1,0 +1,7 @@
+[dotenv@17.2.3] injecting env (3) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+Testing bot connection...
+BOT_TOKEN exists: true
+BOT_TOKEN starts with: 8548679094...
+Received /start command from: David
+Received /start command from: David
+Received /start command from: David
