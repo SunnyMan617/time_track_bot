@@ -1,7 +1,6 @@
 // Telegram Bot Entry Point
 
 import { Telegraf, Markup } from 'telegraf';
-import prisma from '../lib/db';
 
 const bot = new Telegraf(process.env.BOT_TOKEN!);
 
@@ -10,31 +9,11 @@ const WEBAPP_URL = process.env.WEBAPP_URL || 'https://your-app-url.vercel.app';
 // Command: /start
 bot.command('start', async (ctx) => {
   try {
-    const telegramUser = ctx.from;
-
-    // Create or update user in database
-    await prisma.user.upsert({
-      where: { telegramId: BigInt(telegramUser.id) },
-      update: {
-        username: telegramUser.username,
-        firstName: telegramUser.first_name,
-        lastName: telegramUser.last_name,
-        languageCode: telegramUser.language_code,
-        isPremium: telegramUser.is_premium || false,
-        isActive: true,
-      },
-      create: {
-        telegramId: BigInt(telegramUser.id),
-        username: telegramUser.username,
-        firstName: telegramUser.first_name,
-        lastName: telegramUser.last_name,
-        languageCode: telegramUser.language_code,
-        isPremium: telegramUser.is_premium || false,
-      },
-    });
+    const user = ctx.from;
+    const firstName = user.first_name || 'there';
 
     await ctx.reply(
-      `👋 Welcome to Time Tracker Bot!\n\n` +
+      `👋 Welcome to Time Tracker Bot, ${firstName}!\n\n` +
         `Track your time, manage tasks, and boost productivity.\n\n` +
         `Use the buttons below to get started:`,
       Markup.keyboard([
@@ -81,102 +60,53 @@ Need more help? Contact @your_support
 });
 
 // Command: /stats
-// bot.command('stats', async (ctx) => {
-//   try {
-//     const telegramUser = ctx.from;
-//     const user = await prisma.user.findUnique({
-//       where: { telegramId: BigInt(telegramUser.id) },
-//       include: {
-//         timeEntries: {
-//           where: {
-//             startTime: {
-//               gte: new Date(new Date().setHours(0, 0, 0, 0)),
-//             },
-//           },
-//         },
-//         tasks: true,
-//       },
-//     });
-
-//     if (!user) {
-//       await ctx.reply('User not found. Please use /start first.');
-//       return;
-//     }
-
-//     const todayTime = user.timeEntries.reduce((acc, entry) => {
-//       return acc + (entry.duration || 0);
-//     }, 0);
-
-//     const hours = Math.floor(todayTime / 3600);
-//     const minutes = Math.floor((todayTime % 3600) / 60);
-
-//     const activeTasks = user.tasks.filter((t) => t.status === 'IN_PROGRESS').length;
-//     const completedTasks = user.tasks.filter((t) => t.status === 'DONE').length;
-
-//     const statsText = `
-// 📊 *Your Statistics*
-
-// ⏱️ Today: ${hours}h ${minutes}m
-// ✅ Completed Tasks: ${completedTasks}
-// 🔄 Active Tasks: ${activeTasks}
-// 📝 Total Tasks: ${user.tasks.length}
-
-// Open the app for detailed statistics!
-// `;
-
-//     await ctx.reply(statsText, {
-//       parse_mode: 'Markdown',
-//       ...Markup.inlineKeyboard([[Markup.button.webApp('📊 Open App', WEBAPP_URL)]]),
-//     });
-//   } catch (error) {
-//     console.error('Error in /stats command:', error);
-//     await ctx.reply('An error occurred while fetching statistics.');
-//   }
-// });
+bot.command('stats', async (ctx) => {
+  try {
+    await ctx.reply(
+      '📊 *View Your Statistics*\n\n' +
+        'Open the app to see detailed statistics about your time tracking, tasks, and projects.',
+      {
+        parse_mode: 'Markdown',
+        ...Markup.inlineKeyboard([[Markup.button.webApp('📊 Open App', WEBAPP_URL)]]),
+      }
+    );
+  } catch (error) {
+    console.error('Error in /stats command:', error);
+    await ctx.reply('An error occurred while processing your request.');
+  }
+});
 
 // Command: /active
 bot.command('active', async (ctx) => {
   try {
-    const telegramUser = ctx.from;
-    const user = await prisma.user.findUnique({
-      where: { telegramId: BigInt(telegramUser.id) },
-      include: {
-        timeEntries: {
-          where: { endTime: null },
-          include: { task: true, project: true },
-          orderBy: { startTime: 'desc' },
-        },
-      },
-    });
-
-    if (!user) {
-      await ctx.reply('User not found. Please use /start first.');
-      return;
-    }
-
-    if (user.timeEntries.length === 0) {
-      await ctx.reply('No active time tracking. Start tracking in the app!');
-      return;
-    }
-
-    const activeText = user.timeEntries
-      .map((entry) => {
-        const elapsed = Math.floor((Date.now() - entry.startTime.getTime()) / 1000);
-        const hours = Math.floor(elapsed / 3600);
-        const minutes = Math.floor((elapsed % 3600) / 60);
-        const taskInfo = entry.task ? ` - ${entry.task.title}` : '';
-        const projectInfo = entry.project ? ` [${entry.project.name}]` : '';
-        return `⏱️ ${hours}h ${minutes}m${taskInfo}${projectInfo}`;
-      })
-      .join('\n');
-
-    await ctx.reply(`🔄 *Active Time Tracking:*\n\n${activeText}`, {
-      parse_mode: 'Markdown',
-      ...Markup.inlineKeyboard([[Markup.button.webApp('📊 Open App', WEBAPP_URL)]]),
-    });
+    await ctx.reply(
+      '⏱️ *Active Time Tracking*\n\n' +
+        'Open the app to view and manage your active timers.',
+      {
+        parse_mode: 'Markdown',
+        ...Markup.inlineKeyboard([[Markup.button.webApp('📊 Open App', WEBAPP_URL)]]),
+      }
+    );
   } catch (error) {
     console.error('Error in /active command:', error);
-    await ctx.reply('An error occurred while fetching active entries.');
+    await ctx.reply('An error occurred while processing your request.');
+  }
+});
+
+// Command: /stop
+bot.command('stop', async (ctx) => {
+  try {
+    await ctx.reply(
+      '⏸️ *Stop Time Tracking*\n\n' +
+        'Open the app to stop your active timers.',
+      {
+        parse_mode: 'Markdown',
+        ...Markup.inlineKeyboard([[Markup.button.webApp('📊 Open App', WEBAPP_URL)]]),
+      }
+    );
+  } catch (error) {
+    console.error('Error in /stop command:', error);
+    await ctx.reply('An error occurred while processing your request.');
   }
 });
 
@@ -190,8 +120,14 @@ bot.hears('⏱️ Quick Start', async (ctx) => {
 
 // Handle "Stats" button
 bot.hears('📈 Stats', async (ctx) => {
-  await ctx.replyWithChatAction('typing');
-  await ctx.reply('/stats').then(() => bot.handleUpdate(ctx.update));
+  await ctx.reply(
+    '📊 *View Your Statistics*\n\n' +
+      'Open the app to see detailed statistics about your time tracking, tasks, and projects.',
+    {
+      parse_mode: 'Markdown',
+      ...Markup.inlineKeyboard([[Markup.button.webApp('📊 Open App', WEBAPP_URL)]]),
+    }
+  );
 });
 
 // Handle "Settings" button
@@ -204,7 +140,32 @@ bot.hears('⚙️ Settings', async (ctx) => {
 
 // Handle "Help" button
 bot.hears('❓ Help', async (ctx) => {
-  await ctx.reply('/help').then(() => bot.handleUpdate(ctx.update));
+  const helpText = `
+🤖 *Time Tracker Bot - Help*
+
+*Commands:*
+/start - Start the bot
+/help - Show this help message
+/stats - View your time statistics
+/active - Show active time entries
+/stop - Stop current time tracking
+
+*Quick Actions:*
+⏱️ Quick Start - Start tracking time quickly
+📈 Stats - View your statistics
+⚙️ Settings - Configure your preferences
+📊 Open App - Open the full mini app
+
+*Features:*
+• Track time for tasks and projects
+• Create and manage projects
+• View detailed statistics
+• Simple and intuitive interface
+
+Need more help? Contact @your_support
+`;
+
+  await ctx.reply(helpText, { parse_mode: 'Markdown' });
 });
 
 // Error handling

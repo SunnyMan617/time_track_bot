@@ -1,7 +1,7 @@
 // Time Entries API Routes
 
 import { NextRequest, NextResponse } from 'next/server';
-import { TimeService } from '@/src/lib/services/timeService';
+import { timeStore, statsHelper } from '@/src/lib/store';
 import { z } from 'zod';
 
 // Default user ID for single-user mode (no authentication)
@@ -32,12 +32,12 @@ export async function GET(req: NextRequest) {
     const action = searchParams.get('action');
 
     if (action === 'active') {
-      const activeTimer = await TimeService.getActiveTimer(DEFAULT_USER_ID);
+      const activeTimer = timeStore.findActive();
       return NextResponse.json({ data: activeTimer });
     }
 
     if (action === 'stats') {
-      const stats = await TimeService.getTimeStats(DEFAULT_USER_ID);
+      const stats = statsHelper.getTimeStats();
       return NextResponse.json({ data: stats });
     }
 
@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
     const taskId = searchParams.get('taskId');
     const limit = searchParams.get('limit');
 
-    const entries = await TimeService.getTimeEntries(DEFAULT_USER_ID, {
+    const entries = timeStore.findAll({
       startDate: startDate ? new Date(startDate) : undefined,
       endDate: endDate ? new Date(endDate) : undefined,
       projectId: projectId || undefined,
@@ -70,31 +70,61 @@ export async function POST(req: NextRequest) {
 
     if (action === 'start') {
       const validated = StartTimerSchema.parse(body);
-      const entry = await TimeService.startTimer(
-        DEFAULT_USER_ID,
-        validated.taskId,
-        validated.projectId,
-        validated.description
-      );
+      
+      // Check if there's already an active timer
+      const activeTimer = timeStore.findActive();
+      if (activeTimer) {
+        return NextResponse.json({ error: 'There is already an active timer' }, { status: 400 });
+      }
+
+      const entry = timeStore.create({
+        userId: DEFAULT_USER_ID,
+        startTime: new Date(),
+        taskId: validated.taskId,
+        projectId: validated.projectId,
+        description: validated.description,
+        isManual: false,
+      });
       return NextResponse.json({ data: entry });
     }
 
     if (action === 'stop') {
       const validated = StopTimerSchema.parse(body);
-      const entry = await TimeService.stopTimer(DEFAULT_USER_ID, validated.entryId);
-      return NextResponse.json({ data: entry });
+      const entry = timeStore.findById(validated.entryId);
+      
+      if (!entry) {
+        return NextResponse.json({ error: 'Time entry not found' }, { status: 404 });
+      }
+
+      if (entry.endTime) {
+        return NextResponse.json({ error: 'Timer already stopped' }, { status: 400 });
+      }
+
+      const endTime = new Date();
+      const duration = Math.floor((endTime.getTime() - entry.startTime.getTime()) / 1000);
+      
+      const updated = timeStore.update(validated.entryId, {
+        endTime,
+        duration,
+      });
+      
+      return NextResponse.json({ data: updated });
     }
 
     if (action === 'manual') {
       const validated = ManualEntrySchema.parse(body);
-      const entry = await TimeService.createManualEntry(
-        DEFAULT_USER_ID,
-        validated.startTime,
-        validated.endTime,
-        validated.taskId,
-        validated.projectId,
-        validated.description
-      );
+      const duration = Math.floor((validated.endTime.getTime() - validated.startTime.getTime()) / 1000);
+      
+      const entry = timeStore.create({
+        userId: DEFAULT_USER_ID,
+        startTime: validated.startTime,
+        endTime: validated.endTime,
+        duration,
+        taskId: validated.taskId,
+        projectId: validated.projectId,
+        description: validated.description,
+        isManual: true,
+      });
       return NextResponse.json({ data: entry });
     }
 
@@ -121,13 +151,22 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: 'Missing entryId' }, { status: 400 });
     }
 
-    const entry = await TimeService.updateTimeEntry(DEFAULT_USER_ID, entryId, {
-      description: data.description,
-      startTime: data.startTime ? new Date(data.startTime) : undefined,
-      endTime: data.endTime ? new Date(data.endTime) : undefined,
-      taskId: data.taskId,
-      projectId: data.projectId,
-    });
+    const updates: any = {};
+    if (data.description !== undefined) updates.description = data.description;
+    if (data.startTime) updates.startTime = new Date(data.startTime);
+    if (data.endTime) updates.endTime = new Date(data.endTime);
+    if (data.taskId !== undefined) updates.taskId = data.taskId;
+    if (data.projectId !== undefined) updates.projectId = data.projectId;
+
+    if (updates.startTime && updates.endTime) {
+      updates.duration = Math.floor((updates.endTime.getTime() - updates.startTime.getTime()) / 1000);
+    }
+
+    const entry = timeStore.update(entryId, updates);
+    
+    if (!entry) {
+      return NextResponse.json({ error: 'Time entry not found' }, { status: 404 });
+    }
 
     return NextResponse.json({ data: entry });
   } catch (error) {
@@ -149,8 +188,13 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Missing entryId' }, { status: 400 });
     }
 
-    const entry = await TimeService.deleteTimeEntry(DEFAULT_USER_ID, entryId);
-    return NextResponse.json({ data: entry });
+    const deleted = timeStore.delete(entryId);
+    
+    if (!deleted) {
+      return NextResponse.json({ error: 'Time entry not found' }, { status: 404 });
+    }
+    
+    return NextResponse.json({ data: { success: true } });
   } catch (error) {
     if (error instanceof Error) {
       return NextResponse.json({ error: error.message }, { status: 400 });

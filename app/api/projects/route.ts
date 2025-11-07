@@ -1,7 +1,7 @@
 // Projects API Routes
 
 import { NextRequest, NextResponse } from 'next/server';
-import { ProjectService } from '@/src/lib/services/projectService';
+import { projectStore, taskStore, timeStore, statsHelper } from '@/src/lib/store';
 import { z } from 'zod';
 
 // Default user ID for single-user mode (no authentication)
@@ -31,15 +31,45 @@ export async function GET(req: NextRequest) {
     if (projectId) {
       const action = searchParams.get('action');
       if (action === 'stats') {
-        const stats = await ProjectService.getProjectStats(DEFAULT_USER_ID, projectId);
+        const stats = statsHelper.getProjectStats(projectId);
+        if (!stats) {
+          return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+        }
         return NextResponse.json({ data: stats });
       }
-      const project = await ProjectService.getProject(DEFAULT_USER_ID, projectId);
-      return NextResponse.json({ data: project });
+      
+      const project = projectStore.findById(projectId);
+      if (!project) {
+        return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+      }
+      
+      // Include tasks and time entries
+      const tasks = taskStore.findAll({ projectId });
+      const timeEntries = timeStore.findAll({ projectId });
+      
+      return NextResponse.json({ 
+        data: { 
+          ...project, 
+          tasks,
+          timeEntries 
+        } 
+      });
     }
 
-    const projects = await ProjectService.getProjects(DEFAULT_USER_ID, includeArchived);
-    return NextResponse.json({ data: projects });
+    const projects = projectStore.findAll(includeArchived);
+    
+    // Add tasks and timeEntries count to each project
+    const projectsWithData = projects.map(project => {
+      const tasks = taskStore.findAll({ projectId: project.id });
+      const timeEntries = timeStore.findAll({ projectId: project.id });
+      return {
+        ...project,
+        tasks,
+        timeEntries,
+      };
+    });
+    
+    return NextResponse.json({ data: projectsWithData });
   } catch (error) {
     if (error instanceof Error) {
       return NextResponse.json({ error: error.message }, { status: 400 });
@@ -55,7 +85,8 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const validated = CreateProjectSchema.parse(body);
 
-    const project = await ProjectService.createProject(DEFAULT_USER_ID, {
+    const project = projectStore.create({
+      userId: DEFAULT_USER_ID,
       name: validated.name,
       description: validated.description,
       color: validated.color,
@@ -77,12 +108,17 @@ export async function PUT(req: NextRequest) {
     const body = await req.json();
     const validated = UpdateProjectSchema.parse(body);
 
-    const project = await ProjectService.updateProject(DEFAULT_USER_ID, validated.projectId, {
-      name: validated.name,
-      description: validated.description,
-      color: validated.color,
-      isArchived: validated.isArchived,
-    });
+    const updates: any = {};
+    if (validated.name !== undefined) updates.name = validated.name;
+    if (validated.description !== undefined) updates.description = validated.description;
+    if (validated.color !== undefined) updates.color = validated.color;
+    if (validated.isArchived !== undefined) updates.isArchived = validated.isArchived;
+
+    const project = projectStore.update(validated.projectId, updates);
+    
+    if (!project) {
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+    }
 
     return NextResponse.json({ data: project });
   } catch (error) {
@@ -107,8 +143,13 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Missing projectId' }, { status: 400 });
     }
 
-    const project = await ProjectService.deleteProject(DEFAULT_USER_ID, projectId);
-    return NextResponse.json({ data: project });
+    const deleted = projectStore.delete(projectId);
+    
+    if (!deleted) {
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+    }
+    
+    return NextResponse.json({ data: { success: true } });
   } catch (error) {
     if (error instanceof Error) {
       return NextResponse.json({ error: error.message }, { status: 400 });

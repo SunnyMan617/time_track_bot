@@ -7,16 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "postinstall": "prisma generate",
     "bot": "tsx src/bot/index.ts",
-    "bot:dev": "tsx watch src/bot/index.ts",
-    "db:generate": "prisma generate",
-    "db:push": "prisma db push",
-    "db:studio": "prisma studio",
-    "db:migrate": "prisma migrate dev"
+    "bot:dev": "tsx watch src/bot/index.ts"
   },
   "dependencies": {
-    "@prisma/client": "^5.22.0",
     "chart.js": "^4.4.6",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
@@ -38,7 +32,6 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.0.1",
-    "prisma": "^5.22.0",
     "tailwindcss": "^4",
     "tsx": "^4.19.2",
     "typescript": "^5"

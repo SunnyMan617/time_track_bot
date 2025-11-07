@@ -1,7 +1,7 @@
 // Tasks API Routes
 
 import { NextRequest, NextResponse } from 'next/server';
-import { TaskService } from '@/src/lib/services/taskService';
+import { taskStore, projectStore } from '@/src/lib/store';
 import { TaskStatus, Priority } from '@/src/types';
 import { z } from 'zod';
 
@@ -34,21 +34,45 @@ export async function GET(req: NextRequest) {
     const taskId = searchParams.get('taskId');
 
     if (taskId) {
-      const task = await TaskService.getTask(DEFAULT_USER_ID, taskId);
-      return NextResponse.json({ data: task });
+      const task = taskStore.findById(taskId);
+      if (!task) {
+        return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+      }
+      
+      // Include project info if available
+      const taskWithProject = { ...task };
+      if (task.projectId) {
+        const project = projectStore.findById(task.projectId);
+        if (project) {
+          (taskWithProject as any).project = { name: project.name, color: project.color };
+        }
+      }
+      
+      return NextResponse.json({ data: taskWithProject });
     }
 
     const status = searchParams.get('status') as TaskStatus | null;
     const priority = searchParams.get('priority') as Priority | null;
     const projectId = searchParams.get('projectId');
 
-    const tasks = await TaskService.getTasks(DEFAULT_USER_ID, {
+    const tasks = taskStore.findAll({
       status: status || undefined,
       priority: priority || undefined,
       projectId: projectId || undefined,
     });
+    
+    // Add project info to tasks
+    const tasksWithProjects = tasks.map(task => {
+      if (task.projectId) {
+        const project = projectStore.findById(task.projectId);
+        if (project) {
+          return { ...task, project: { name: project.name, color: project.color } };
+        }
+      }
+      return task;
+    });
 
-    return NextResponse.json({ data: tasks });
+    return NextResponse.json({ data: tasksWithProjects });
   } catch (error) {
     if (error instanceof Error) {
       return NextResponse.json({ error: error.message }, { status: 400 });
@@ -64,7 +88,8 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const validated = CreateTaskSchema.parse(body);
 
-    const task = await TaskService.createTask(DEFAULT_USER_ID, {
+    const task = taskStore.create({
+      userId: DEFAULT_USER_ID,
       title: validated.title,
       description: validated.description,
       status: validated.status,
@@ -89,14 +114,19 @@ export async function PUT(req: NextRequest) {
     const body = await req.json();
     const validated = UpdateTaskSchema.parse(body);
 
-    const task = await TaskService.updateTask(DEFAULT_USER_ID, validated.taskId, {
-      title: validated.title,
-      description: validated.description,
-      status: validated.status,
-      priority: validated.priority,
-      projectId: validated.projectId,
-      dueDate: validated.dueDate,
-    });
+    const updates: any = {};
+    if (validated.title !== undefined) updates.title = validated.title;
+    if (validated.description !== undefined) updates.description = validated.description;
+    if (validated.status !== undefined) updates.status = validated.status;
+    if (validated.priority !== undefined) updates.priority = validated.priority;
+    if (validated.projectId !== undefined) updates.projectId = validated.projectId;
+    if (validated.dueDate !== undefined) updates.dueDate = validated.dueDate;
+
+    const task = taskStore.update(validated.taskId, updates);
+    
+    if (!task) {
+      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+    }
 
     return NextResponse.json({ data: task });
   } catch (error) {
@@ -121,8 +151,13 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Missing taskId' }, { status: 400 });
     }
 
-    const task = await TaskService.deleteTask(DEFAULT_USER_ID, taskId);
-    return NextResponse.json({ data: task });
+    const deleted = taskStore.delete(taskId);
+    
+    if (!deleted) {
+      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+    }
+    
+    return NextResponse.json({ data: { success: true } });
   } catch (error) {
     if (error instanceof Error) {
       return NextResponse.json({ error: error.message }, { status: 400 });
