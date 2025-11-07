@@ -97,12 +97,12 @@ After deployment, you need to tell Telegram where to send updates:
    You should see:
    ```
    🔧 Setting up webhook...
-   📍 Webhook URL: https://your-app.vercel.app/api/webhook
+   📍 Webhook URL: https://your-app.vercel.app
    
    ✅ Webhook setup complete!
    
    📊 Webhook Info:
-      URL: https://your-app.vercel.app/api/webhook
+      URL: https://your-app.vercel.app
       Pending updates: 0
       ✅ No errors
    
@@ -127,7 +127,7 @@ You can check if your webhook is working:
 
 ```bash
 # Visit this URL in your browser
-https://your-app.vercel.app/api/webhook
+https://your-app.vercel.app/
 ```
 
 You should see:
@@ -165,7 +165,7 @@ curl https://api.telegram.org/bot<YOUR_BOT_TOKEN>/getWebhookInfo
 
 4. **Test the webhook endpoint:**
    ```bash
-   curl https://your-app.vercel.app/api/webhook
+   curl https://your-app.vercel.app
    ```
 
 ### Webhook setup fails
