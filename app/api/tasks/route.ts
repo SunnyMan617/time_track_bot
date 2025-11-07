@@ -2,7 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { TaskService } from '@/src/lib/services/taskService';
-import { TaskStatus, Priority } from '@prisma/client';
+import { TaskStatus, Priority } from '@/src/types';
 import { z } from 'zod';
 
 const CreateTaskSchema = z.object({

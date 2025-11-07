@@ -1,7 +1,8 @@
 // Task Service
 
 import prisma from '../db';
-import { TaskStatus, Priority } from '@prisma/client';
+import { TaskStatus, Priority } from '../../types';
+import { Prisma } from '@prisma/client';
 
 export class TaskService {
   static async createTask(
@@ -104,7 +105,7 @@ export class TaskService {
       priority?: Priority;
     }
   ) {
-    const where: any = { userId };
+    const where: Prisma.TaskWhereInput = { userId };
 
     if (options?.status) where.status = options.status;
     if (options?.projectId) where.projectId = options.projectId;
