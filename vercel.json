@@ -4,7 +4,6 @@
   "installCommand": "npm install",
   "framework": "nextjs",
   "env": {
-    "BOT_TOKEN": "@bot_token",
     "DATABASE_URL": "@database_url"
   },
   "build": {
